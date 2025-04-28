@@ -28,7 +28,7 @@ import spconv.pytorch as spconv
 import cumm.tensorview as tv
 from spconv.core import ConvAlgo
 
-from tools.sparseconv_quantization import QuantAdd, SparseConvolutionQunat
+# from tools.sparseconv_quantization import QuantAdd, SparseConvolutionQunat
 
 avoid_reuse_container = []
 obj_to_tensor_id = {}
@@ -138,71 +138,71 @@ def symbolic_sparse_convolution(self, ilayer, y, x):
     )
 
 
-@register_node("SparseConvolutionQunat.forward")
-def symbolic_sparse_convolution_quant(self, ilayer, y, x):
-    register_tensor(y)
-    print(f"   --> SparseConvolutionQunat{ilayer}[{'subm' if self.subm else 'conv'}] -> Input {get_tensor_id(x)}, Output {get_tensor_id(y)}")
+# @register_node("SparseConvolutionQunat.forward")
+# def symbolic_sparse_convolution_quant(self, ilayer, y, x):
+#     register_tensor(y)
+#     print(f"   --> SparseConvolutionQunat{ilayer}[{'subm' if self.subm else 'conv'}] -> Input {get_tensor_id(x)}, Output {get_tensor_id(y)}")
 
-    if self.transposed:
-        output_size = spconv.ops.get_deconv_output_size(
-            x.features.size(), self.kernel_size, self.stride, self.padding, self.dilation, self.output_padding
-        )
-    else:
-        output_size = spconv.ops.get_conv_output_size(
-            x.features.size(), self.kernel_size, self.stride, self.padding, self.dilation
-        )
+#     if self.transposed:
+#         output_size = spconv.ops.get_deconv_output_size(
+#             x.features.size(), self.kernel_size, self.stride, self.padding, self.dilation, self.output_padding
+#         )
+#     else:
+#         output_size = spconv.ops.get_conv_output_size(
+#             x.features.size(), self.kernel_size, self.stride, self.padding, self.dilation
+#         )
     
-    if self.subm:
-        output_size[0] = x.features.size(0)
+#     if self.subm:
+#         output_size[0] = x.features.size(0)
     
-    output_size[1] = self.out_channels
-    inputs = [
-        get_tensor_id(x), 
-        append_initializer(self.weight.data, f"spconv{ilayer}.weight"),
-    ]
+#     output_size[1] = self.out_channels
+#     inputs = [
+#         get_tensor_id(x), 
+#         append_initializer(self.weight.data, f"spconv{ilayer}.weight"),
+#     ]
 
-    if self.bias is not None:
-        inputs.append(append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
+#     if self.bias is not None:
+#         inputs.append(append_initializer(self.bias.data, f"spconv{ilayer}.bias"))
         
-    act_type_name = {
-        tv.gemm.Activation.ReLU      : "ReLU",
-        tv.gemm.Activation.None_     : "None",
-        tv.gemm.Activation.Sigmoid   : "Sigmoid",
-        tv.gemm.Activation.LeakyReLU : "LeakyReLU"
-    }
+#     act_type_name = {
+#         tv.gemm.Activation.ReLU      : "ReLU",
+#         tv.gemm.Activation.None_     : "None",
+#         tv.gemm.Activation.Sigmoid   : "Sigmoid",
+#         tv.gemm.Activation.LeakyReLU : "LeakyReLU"
+#     }
 
-    output_bound = 200000
-    if hasattr(self, "output_bound"):
-        output_bound = self.output_bound
+#     output_bound = 200000
+#     if hasattr(self, "output_bound"):
+#         output_bound = self.output_bound
 
-    nodes.append(
-        helper.make_node(
-            "SparseConvolution", inputs, [get_tensor_id(y)], f"conv{ilayer}", 
-            ndim = self.ndim,
-            input_spatial_shape = x.spatial_shape,
-            output_spatial_shape = y.spatial_shape,
-            in_channels = self.in_channels,
-            out_channels = self.out_channels,
-            kernel_size = self.kernel_size,
-            output_bound = output_bound,
-            stride = self.stride,
-            dilation = self.dilation,
-            padding = self.padding,
-            transposed = self.transposed,
-            inverse = self.inverse,
-            output_padding = self.output_padding,
-            groups = self.groups,
-            subm = self.subm,
-            rulebook = self.indice_key if self.indice_key else "",
-            activation = act_type_name[self.act_type],
-            input_shape  = x.features.shape,
-            output_shape = y.features.shape,
-            input_dynamic_range  = self.input_quantizer.amax.cpu().item(),
-            weight_dynamic_ranges = self.weight_quantizer.amax.cpu().view(-1).numpy().tolist(),
-            precision = "fp16" if hasattr(self, "precision") is None else self.precision,
-            output_precision = "fp16" if hasattr(self, "output_precision") is None else self.output_precision
-        )
-    )
+#     nodes.append(
+#         helper.make_node(
+#             "SparseConvolution", inputs, [get_tensor_id(y)], f"conv{ilayer}", 
+#             ndim = self.ndim,
+#             input_spatial_shape = x.spatial_shape,
+#             output_spatial_shape = y.spatial_shape,
+#             in_channels = self.in_channels,
+#             out_channels = self.out_channels,
+#             kernel_size = self.kernel_size,
+#             output_bound = output_bound,
+#             stride = self.stride,
+#             dilation = self.dilation,
+#             padding = self.padding,
+#             transposed = self.transposed,
+#             inverse = self.inverse,
+#             output_padding = self.output_padding,
+#             groups = self.groups,
+#             subm = self.subm,
+#             rulebook = self.indice_key if self.indice_key else "",
+#             activation = act_type_name[self.act_type],
+#             input_shape  = x.features.shape,
+#             output_shape = y.features.shape,
+#             input_dynamic_range  = self.input_quantizer.amax.cpu().item(),
+#             weight_dynamic_ranges = self.weight_quantizer.amax.cpu().view(-1).numpy().tolist(),
+#             precision = "fp16" if hasattr(self, "precision") is None else self.precision,
+#             output_precision = "fp16" if hasattr(self, "output_precision") is None else self.output_precision
+#         )
+#     )
 
 @register_node("torch.nn.ReLU.forward")
 def symbolic_relu(self, ilayer, y, x):
@@ -215,20 +215,20 @@ def symbolic_relu(self, ilayer, y, x):
         )
     )
 
-@register_node("QuantAdd.forward")
-def symbolic_add_quant(self, ilayer, y, a, b):
-    register_tensor(y)
-    print(f"   --> QuantAdd{ilayer} -> Input {get_tensor_id(a)} + {get_tensor_id(b)}, Output {get_tensor_id(y)}")
+# @register_node("QuantAdd.forward")
+# def symbolic_add_quant(self, ilayer, y, a, b):
+#     register_tensor(y)
+#     print(f"   --> QuantAdd{ilayer} -> Input {get_tensor_id(a)} + {get_tensor_id(b)}, Output {get_tensor_id(y)}")
 
-    nodes.append(
-        helper.make_node(
-            "Add", [get_tensor_id(a), get_tensor_id(b)], [get_tensor_id(y)], f"add{ilayer}",
-            input0_dynamic_range = self.input_quantizer.amax.cpu().item(),
-            input1_dynamic_range = self.input_quantizer.amax.cpu().item(),
-            precision = "fp16" if hasattr(self, "precision") is None else self.precision,
-            output_precision = "fp16" if hasattr(self, "output_precision") is None else self.output_precision
-        )
-    )
+#     nodes.append(
+#         helper.make_node(
+#             "Add", [get_tensor_id(a), get_tensor_id(b)], [get_tensor_id(y)], f"add{ilayer}",
+#             input0_dynamic_range = self.input_quantizer.amax.cpu().item(),
+#             input1_dynamic_range = self.input_quantizer.amax.cpu().item(),
+#             precision = "fp16" if hasattr(self, "precision") is None else self.precision,
+#             output_precision = "fp16" if hasattr(self, "output_precision") is None else self.output_precision
+#         )
+#     )
     
 @register_node("torch.Tensor.__add__")
 def symbolic_add(a, ilayer, y, b):

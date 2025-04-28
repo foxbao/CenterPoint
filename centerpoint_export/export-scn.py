@@ -28,7 +28,7 @@ import argparse
 # custom functional package
 import funcs
 import exptool
-from tools.sparseconv_quantization import initialize, disable_quantization, quant_sparseconv_module, quant_add_module
+# from tools.sparseconv_quantization import initialize, disable_quantization, quant_sparseconv_module, quant_add_module
  
 if __name__ == "__main__":
     initialize()

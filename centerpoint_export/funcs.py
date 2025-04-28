@@ -98,6 +98,66 @@ def load_scn_backbone_checkpoint(model, file, use_quant= True):
     model.load_state_dict(new_ckpt,strict =True)
     return model
 
+def load_scn_backbone_checkpoint_KITTI(model, file):
+    device   = next(model.parameters()).device
+    ckpt     = torch.load(file, map_location=device)["model_state"]
+    new_ckpt = collections.OrderedDict()
+    for key, val in ckpt.items():
+        if key.startswith("backbone_3d."):
+            newkey = key[key.find(".")+1:]
+            if(newkey.startswith("conv2.0.0")):
+                newkey = "conv2.0" + newkey.split("conv2.0.0")[-1]
+            elif(newkey.startswith("conv2.0.1")):
+                newkey = "conv2.1" + newkey.split("conv2.0.1")[-1]
+            elif(newkey.startswith("conv2.1")):
+                newkey = "conv2.3" + newkey.split("conv2.1")[-1]
+            elif(newkey.startswith("conv2.2")):
+                newkey = "conv2.4" + newkey.split("conv2.2")[-1]
+            elif(newkey.startswith("conv3.0.0")):
+                newkey = "conv3.0" + newkey.split("conv3.0.0")[-1]
+            elif(newkey.startswith("conv3.0.1")):
+                newkey = "conv3.1" + newkey.split("conv3.0.1")[-1]
+            elif(newkey.startswith("conv3.1")):
+                newkey = "conv3.3" + newkey.split("conv3.1")[-1]
+            elif(newkey.startswith("conv3.2")):
+                newkey = "conv3.4" + newkey.split("conv3.2")[-1]
+            elif(newkey.startswith("conv4.0.0")):
+                newkey = "conv4.0" + newkey.split("conv4.0.0")[-1]
+            elif(newkey.startswith("conv4.0.1")):
+                newkey = "conv4.1" + newkey.split("conv4.0.1")[-1]
+            elif(newkey.startswith("conv4.1")):
+                newkey = "conv4.3" + newkey.split("conv4.1")[-1]
+            elif(newkey.startswith("conv4.2")):
+                newkey = "conv4.4" + newkey.split("conv4.2")[-1]
+            elif(newkey.startswith("conv_out")):
+                newkey = "extra_conv" + newkey.split("conv_out")[-1]
+            else:
+                print("backbone3d key is matching:", newkey)
+
+            new_ckpt[newkey] = val
+    model.load_state_dict(new_ckpt)
+    return model
+
+
+# def new_sparse_basic_block_forward(self, is_fuse_relu=True):
+#     def sparse_basic_block_forward(x):
+#         identity = x
+#         out = self.conv1(x)
+#         if is_fuse_relu == False:
+#             out = out.replace_feature(self.relu(out.features))#####note train only
+
+#         out = self.conv2(out)
+
+#         if self.downsample is not None:
+#             identity = self.downsample(x)
+
+#         if hasattr(self, 'quant_add'):
+#             out = out.replace_feature(self.quant_add(out.features, identity.features))
+#         else:
+#             out = out.replace_feature(out.features + identity.features)            
+#         out = out.replace_feature(self.relu(out.features))
+#         return out
+#     return sparse_basic_block_forward
 
 def new_sparse_basic_block_forward(self, is_fuse_relu=True):
     def sparse_basic_block_forward(x):
@@ -111,13 +171,16 @@ def new_sparse_basic_block_forward(self, is_fuse_relu=True):
         if self.downsample is not None:
             identity = self.downsample(x)
 
-        if hasattr(self, 'quant_add'):
-            out = out.replace_feature(self.quant_add(out.features, identity.features))
-        else:
-            out = out.replace_feature(out.features + identity.features)            
+        # if hasattr(self, 'quant_add'):
+        #     out = out.replace_feature(self.quant_add(out.features, identity.features))
+        # else:
+        #     out = out.replace_feature(out.features + identity.features)  
+        
+        out = out.replace_feature(out.features + identity.features)            
         out = out.replace_feature(self.relu(out.features))
         return out
     return sparse_basic_block_forward
+
 
 def fuse_sparse_basic_block(self, is_fuse_bn = False, is_fuse_relu=True):
     self.forward = new_sparse_basic_block_forward(self, is_fuse_relu=is_fuse_relu)
