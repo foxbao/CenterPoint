@@ -68,7 +68,15 @@ if __name__ == "__main__":
         # spatial_shape = [(70.4)/0.05, (40-(-40))/0.05, (1-(-3))/0.1] = [1408,,1600,40]    
         spatial_shape = [1408,1600,40]
     exptool.export_onnx(model, voxels, coors, batch_size, spatial_shape, args.save_onnx, args.save_tensor)
-
+    
+    # 测试onnx的推理结果，和pytorch的推理结果是否一致
+    # if args.test:
+    #     # 加载onnx模型
+    #     onnx_model = onnx.load(args.save_onnx)
+    #     onnx.checker.check_model(onnx_model)
+    #     ort_session = onnxruntime.InferenceSession(args.save_onnx)
+    #     # 获取输入输出名称
+    
 
 # if __name__ == "__main__":
 #     initialize()
